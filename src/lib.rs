@@ -14,7 +14,9 @@ const E: u8 = 2;
 #[derive(Debug)]
 pub enum GeneratorType {
 	RecursiveBacktrack,
+	StackBacktrack,
 	RecursiveDivision,
+	StackDivision,
 	EllersAlgorithm
 }
 
@@ -112,12 +114,18 @@ impl Maze {
 
 		// this is so ugly
 		match self.generator_type {
-			GeneratorType::RecursiveBacktrack => {
-				RecursiveBacktrackGenerator::new(self, seed).generate()
-			},
-			GeneratorType::RecursiveDivision => {
-				RecursiveDivisionGenerator::new(self, seed).generate()
-			},
+			GeneratorType::RecursiveBacktrack =>
+				RecursiveBacktrackGenerator::new(self, seed).generate(),
+
+			GeneratorType::StackBacktrack =>
+				StackBacktrackGenerator::new(self, seed).generate(),
+
+			GeneratorType::RecursiveDivision => 
+				RecursiveDivisionGenerator::new(self, seed).generate(),
+
+			GeneratorType::StackDivision => 
+				StackDivisionGenerator::new(self, seed).generate(),
+				
 			_ => panic!(concat!("\"", stringify!(self.generator_type), "\" not implemented"))
 		};
 	}

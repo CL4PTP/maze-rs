@@ -3,12 +3,12 @@ extern crate libc;
 use self::mmap::*;
 use std::fs::File;
 
-#[inline]
+#[inline(always)]
 fn retrieve_bits(value: u32, nth: u32) -> u32 {
 	(value >> (nth * 2)) & 0b11
 }
 
-#[inline]
+#[inline(always)]
 fn prepare_bits(value: u32, nth: u32) -> u32 {
 	(value & 0b11) << (nth * 2)
 }
@@ -125,10 +125,12 @@ impl MMAPPackedArray {
 		}
 	}
 
+	#[inline]
 	unsafe fn get_unpacked_unchecked(&self, index: usize) -> *const u32 {
 		(self.mmap.data() as *const u32).offset(index as isize)
 	}
 
+	#[inline]
 	unsafe fn get_unpacked_unchecked_mut(&mut self, index: usize) -> *mut u32 {
 		(self.mmap.data() as *mut u32).offset(index as isize)
 	}
