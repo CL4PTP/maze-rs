@@ -13,9 +13,10 @@ enum Orientation {
 	Vertical
 }
 
-pub trait Generator<'a> {
-	fn generate(&'a mut self);
+pub trait Generator {
+	fn generate(&mut self);
 }
+
 
 pub struct RecursiveBacktrackGenerator<'a> {
 	maze: &'a mut Maze,
@@ -23,10 +24,10 @@ pub struct RecursiveBacktrackGenerator<'a> {
 }
 
 impl<'a> RecursiveBacktrackGenerator<'a> {
-	pub fn new(maze: &'a mut Maze, seed: u64) -> Self {
+	pub fn new(maze: &'a mut Maze, seed: &[u64]) -> Self {
 		RecursiveBacktrackGenerator {
 			maze: maze,
-			rng: SeedableRng::from_seed(&[seed] as &[_])
+			rng: SeedableRng::from_seed(seed)
 		}
 	}
 
@@ -58,11 +59,12 @@ impl<'a> RecursiveBacktrackGenerator<'a> {
 	}
 }
 
-impl<'a> Generator<'a> for RecursiveBacktrackGenerator<'a> {
+impl<'a> Generator for RecursiveBacktrackGenerator<'a> {
 	fn generate(&mut self) {
 		self.recursive_carve(0, 0);
 	}
 }
+
 
 pub struct StackBacktrackGenerator<'a> {
 	maze: &'a mut Maze,
@@ -70,15 +72,15 @@ pub struct StackBacktrackGenerator<'a> {
 }
 
 impl<'a> StackBacktrackGenerator<'a> {
-	pub fn new(maze: &'a mut Maze, seed: u64) -> Self {
+	pub fn new(maze: &'a mut Maze, seed: &[u64]) -> Self {
 		StackBacktrackGenerator {
 			maze: maze,
-			rng: SeedableRng::from_seed(&[seed] as &[_])
+			rng: SeedableRng::from_seed(seed)
 		}
 	}
 }
 
-impl<'a> Generator<'a> for StackBacktrackGenerator<'a> {
+impl<'a> Generator for StackBacktrackGenerator<'a> {
 	fn generate(&mut self) {
 		const NUM_DIRECTIONS: i64 = 4;
 		static DIRECTIONS: [u8; 4] = [S, E, W, N];
@@ -113,16 +115,17 @@ impl<'a> Generator<'a> for StackBacktrackGenerator<'a> {
 	}
 }
 
+
 pub struct RecursiveDivisionGenerator<'a> {
 	maze: &'a mut Maze,
 	rng: Isaac64Rng
 }
 
 impl<'a> RecursiveDivisionGenerator<'a> {
-	pub fn new(maze: &'a mut Maze, seed: u64) -> Self {
+	pub fn new(maze: &'a mut Maze, seed: &[u64]) -> Self {
 		RecursiveDivisionGenerator {
 			maze: maze,
-			rng: SeedableRng::from_seed(&[seed] as &[_])
+			rng: SeedableRng::from_seed(seed)
 		}
 	}
 
@@ -183,7 +186,7 @@ impl<'a> RecursiveDivisionGenerator<'a> {
 	}
 }
 
-impl<'a> Generator<'a> for RecursiveDivisionGenerator<'a> {
+impl<'a> Generator for RecursiveDivisionGenerator<'a> {
 	fn generate(&mut self) {
 		self.maze.fill(0xFF);
 
@@ -203,21 +206,22 @@ impl<'a> Generator<'a> for RecursiveDivisionGenerator<'a> {
 	}
 }
 
+
 pub struct StackDivisionGenerator<'a> {
 	maze: &'a mut Maze,
 	rng: Isaac64Rng
 }
 
 impl<'a> StackDivisionGenerator<'a> {
-	pub fn new(maze: &'a mut Maze, seed: u64) -> Self {
+	pub fn new(maze: &'a mut Maze, seed: &[u64]) -> Self {
 		StackDivisionGenerator {
 			maze: maze,
-			rng: SeedableRng::from_seed(&[seed] as &[_])
+			rng: SeedableRng::from_seed(seed)
 		}
 	}
 }
 
-impl<'a> Generator<'a> for StackDivisionGenerator<'a> {
+impl<'a> Generator for StackDivisionGenerator<'a> {
 	fn generate(&mut self) {
 		self.maze.fill(0xFF);
 
@@ -277,7 +281,7 @@ impl<'a> Generator<'a> for StackDivisionGenerator<'a> {
 			for i in 0..length {
 				// except for where we've chosen the hole to be
 				if i != opening {
-					self.maze.unset_provided(mx + dx * i, my + dy * i, direction);
+					unsafe { self.maze.unset_provided_unchecked(mx + dx * i, my + dy * i, direction); }
 				}
 			}
 
@@ -292,6 +296,73 @@ impl<'a> Generator<'a> for StackDivisionGenerator<'a> {
 					stack.push((mx + 1, y, x + width - mx - 1, height));
 				}
 			}
+		}
+	}
+}
+
+
+pub struct SidewinderGenerator<'a> {
+	maze: &'a mut Maze,
+	rng: Isaac64Rng
+}
+
+impl<'a> SidewinderGenerator<'a> {
+	pub fn new(maze: &'a mut Maze, seed: &[u64]) -> Self {
+		SidewinderGenerator {
+			maze: maze,
+			rng: SeedableRng::from_seed(seed)
+		}
+	}
+}
+
+impl<'a> Generator for SidewinderGenerator<'a> {
+	fn generate(&mut self) {
+		for y in 0..self.maze.height() {
+			let mut run_start = 0;
+
+			for x in 0..self.maze.width() {
+				if y > 0 && (x + 1 == self.maze.width() || self.rng.next_f64() > 0.50) {
+					let carve_point = run_start + self.rng.gen_range(0, x - run_start + 1);
+
+					unsafe { self.maze.or_set_unchecked(carve_point, y - 1, S); }
+					run_start = x + 1;
+				} else if x + 1 < self.maze.width() {
+					unsafe { self.maze.or_set_unchecked(x, y, E); }
+				}
+			}
+		}
+	}
+}
+
+
+pub struct ParallelSidewinderGenerator<'a> {
+	maze: &'a mut Maze,
+	rng: Isaac64Rng
+}
+
+impl<'a> ParallelSidewinderGenerator<'a> {
+	pub fn new(maze: &'a mut Maze, seed: &[u64]) -> Self {
+		ParallelSidewinderGenerator {
+			maze: maze,
+			rng: SeedableRng::from_seed(seed)
+		}
+	}
+}
+
+impl<'a> Generator for ParallelSidewinderGenerator<'a> {
+	fn generate(&mut self) {
+		use threadpool::ScopedPool;
+		use std::sync::Arc;
+
+		let pool = ScopedPool::new(8);
+
+		for y in 0..self.maze.height() {
+
+			pool.execute(|| {
+				let mut y = y;
+				unsafe { Maze::or_set_unchecked(self.maze, 0, y - 1, S); }
+				// unsafe { (*child_maze).or_set_unchecked(0, y - 1, S); }
+			});
 		}
 	}
 }
@@ -312,17 +383,17 @@ impl<'a> Generator<'a> for StackDivisionGenerator<'a> {
 // }
 
 // impl<'a> EllersAlgorithmGenerator<'a> {
-// 	pub fn new(maze: &'a mut Maze, seed: u64) -> Self {
+// 	pub fn new(maze: &'a mut Maze, seed: &[u64]) -> Self {
 // 		EllersAlgorithmGenerator {
 // 			maze: maze,
-// 			rng: SeedableRng::from_seed(&[seed] as &[_]),
+// 			rng: SeedableRng::from_seed(seed),
 // 			row_set_ids: vec![(0..maze.width).collect(), Vec::with_capacity(maze.width as usize)],
 // 			set_info: HashMap::with_capacity(maze.width as usize)
 // 		}
 // 	}
 // }
 
-// impl<'a> Generator<'a> for EllersAlgorithmGenerator<'a> {
+// impl<'a> Generator for EllersAlgorithmGenerator<'a> {
 // 	fn generate(&mut self) {
 
 // 		for y in 0 .. self.height-1 {

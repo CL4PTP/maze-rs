@@ -1,10 +1,10 @@
 #![feature(libc)]
 extern crate num;
+extern crate threadpool;
 
 mod packed;
 mod generator;
 
-// use self::num::{ToPrimitive, FromPrimitive, Integer};
 use packed::*;
 use std::fmt::{Display, Formatter, Error};
 
@@ -17,9 +17,12 @@ pub enum GeneratorType {
 	StackBacktrack,
 	RecursiveDivision,
 	StackDivision,
+	Sidewinder,
+	ParallelSidewinder,
 	EllersAlgorithm
 }
 
+#[derive(Debug)]
 pub enum BackingType {
 	InMemory,
 	MMAP(String)
@@ -67,9 +70,8 @@ impl<'a> MazeBuilder {
 	pub fn build(self) -> Maze {
 		let mut maze = Maze::new(self.width, self.height, self.backing_type);
 
-		maze.seed = self.seed;
 		maze.generator_type = self.generator_type;
-		maze.generate();
+		maze.generate(&[self.seed]);
 
 		maze
 	}
@@ -78,7 +80,6 @@ impl<'a> MazeBuilder {
 pub struct Maze {
 	width: i64,
 	height: i64,
-	pub seed: u64,
 	
 	pub generator_type: GeneratorType,
 	pub backing_type: BackingType,
@@ -96,38 +97,42 @@ impl Maze {
 			height: height,
 
 			array: match backing_type {
-				BackingType::InMemory => Box::new(InMemoryPackedArray::new(len)) as Box<PackedArray>,
-				BackingType::MMAP(ref path) => Box::new(MMAPPackedArray::new(len, path)) as Box<PackedArray>
+				BackingType::InMemory =>
+					Box::new(InMemoryPackedArray::new(len)) as Box<PackedArray>,
+
+				BackingType::MMAP(ref path) =>
+					Box::new(MMAPPackedArray::new(len, path)) as Box<PackedArray>
 			},
-			seed: 0,
 
 			generator_type: GeneratorType::RecursiveBacktrack,
 			backing_type: backing_type
 		}
 	}
 
-	pub fn generate(&mut self) {
+	pub fn generate(&mut self, seed: &[u64]) {
 		use self::GeneratorType;
 		use self::generator::*;
 
-		let seed = self.seed; //good job borrow checker
-
-		// this is so ugly
-		match self.generator_type {
+		let mut generator: Box<Generator> = match self.generator_type {
 			GeneratorType::RecursiveBacktrack =>
-				RecursiveBacktrackGenerator::new(self, seed).generate(),
+				Box::new(RecursiveBacktrackGenerator::new(self, seed)),
 
 			GeneratorType::StackBacktrack =>
-				StackBacktrackGenerator::new(self, seed).generate(),
+				Box::new(StackBacktrackGenerator::new(self, seed)),
 
 			GeneratorType::RecursiveDivision => 
-				RecursiveDivisionGenerator::new(self, seed).generate(),
+				Box::new(RecursiveDivisionGenerator::new(self, seed)),
 
 			GeneratorType::StackDivision => 
-				StackDivisionGenerator::new(self, seed).generate(),
-				
-			_ => panic!(concat!("\"", stringify!(self.generator_type), "\" not implemented"))
+				Box::new(StackDivisionGenerator::new(self, seed)),
+
+			GeneratorType::Sidewinder => 
+				Box::new(SidewinderGenerator::new(self, seed)),
+
+			_ => panic!("\"{:?}\" generator algorithm not yet implemented", self.generator_type)
 		};
+
+		generator.generate();
 	}
 
 	#[inline(always)]
@@ -146,34 +151,54 @@ impl Maze {
 
 	fn get(&self, x: i64, y: i64) -> u8 {
 		if 0 <= x && x < self.width && 0 <= y && y < self.height {
-			unsafe { self.array.get((x + y * self.width) as usize) }
+			unsafe { self.get_unchecked(x, y) }
 		} else {
 			S | E
 		}
 	}
 
+	#[inline(always)]
+	unsafe fn get_unchecked(&self, x: i64, y: i64) -> u8 {
+		self.array.get_unchecked((x + y * self.width) as usize)
+	}
+
 	fn set(&mut self, x: i64, y: i64, value: u8) {
 		if 0 <= x && x < self.width && 0 <= y && y < self.height {
 			unsafe {
-				self.array.set((x + y * self.width) as usize, value);
+				self.set_unchecked(x, y, value);
 			}
 		}
+	}
+
+	#[inline(always)]
+	unsafe fn set_unchecked(&mut self, x: i64, y: i64, value: u8) {
+		self.array.set_unchecked((x + y * self.width) as usize, value);
 	}
 
 	fn or_set(&mut self, x: i64, y: i64, value: u8) {
 		if 0 <= x && x < self.width && 0 <= y && y < self.height {
 			unsafe {
-				self.array.or_set((x + y * self.width) as usize, value);
+				self.or_set_unchecked(x, y, value)
 			}
 		}
+	}
+
+	#[inline(always)]
+	unsafe fn or_set_unchecked(&mut self, x: i64, y: i64, value: u8) {
+		self.array.or_set_unchecked((x + y * self.width) as usize, value);
 	}
 
 	fn unset_provided(&mut self, x: i64, y: i64, value: u8) {
 		if 0 <= x && x < self.width && 0 <= y && y < self.height {
 			unsafe {
-				self.array.unset_provided((x + y * self.width) as usize, value);
+				self.unset_provided_unchecked(x, y, value);
 			}
 		}
+	}
+
+	#[inline(always)]
+	unsafe fn unset_provided_unchecked(&mut self, x: i64, y: i64, value: u8) {
+		self.array.unset_provided_unchecked((x + y * self.width) as usize, value);
 	}
 }
 

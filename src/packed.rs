@@ -1,7 +1,7 @@
 extern crate mmap;
 extern crate libc;
+
 use self::mmap::*;
-use std::fs::File;
 
 #[inline(always)]
 fn retrieve_bits(value: u32, nth: u32) -> u32 {
@@ -13,31 +13,39 @@ fn prepare_bits(value: u32, nth: u32) -> u32 {
 	(value & 0b11) << (nth * 2)
 }
 
-pub trait PackedArray {
+pub trait PackedArray: Sync + Send {
 	fn len(&self) -> usize;
 
 	fn fill(&mut self, fill: u8);
 
-	unsafe fn get(&self, index: usize) -> u8;
+	unsafe fn get_unchecked(&self, index: usize) -> u8;
 
-	unsafe fn set(&mut self, index: usize, value: u8);
+	unsafe fn get_unchecked_mut(&mut self, index: usize) -> u8;
 
-	unsafe fn or_set(&mut self, index: usize, value: u8);
+	unsafe fn set_unchecked(&mut self, index: usize, value: u8);
 
-	unsafe fn unset_provided(&mut self, index: usize, value: u8);
+	unsafe fn or_set_unchecked(&mut self, index: usize, value: u8);
+
+	unsafe fn unset_provided_unchecked(&mut self, index: usize, value: u8);
 }
+
+
 
 pub struct InMemoryPackedArray (Vec<u32>);
 
+unsafe impl Sync for InMemoryPackedArray {}
+unsafe impl Send for InMemoryPackedArray {}
+
 impl InMemoryPackedArray {
 	pub fn new(len: usize) -> Self {
-		assert_eq!(len % 16, 0);
+		assert!(len % 16 == 0, "length must be divisible by 16, {} given", len);
 
 		InMemoryPackedArray(vec![0; len / 16])
 	}
 }
 
 impl PackedArray for InMemoryPackedArray {
+	#[inline(always)]
 	fn len(&self) -> usize {
 		self.0.len() * 16
 	}
@@ -51,12 +59,14 @@ impl PackedArray for InMemoryPackedArray {
 		}
 	}
 
-	unsafe fn get(&self, index: usize) -> u8
+	#[inline]
+	unsafe fn get_unchecked(&self, index: usize) -> u8
 	{
 		retrieve_bits(*self.0.get_unchecked(index / 16), (index % 16) as u32) as u8
 	}
 
-	unsafe fn set(&mut self, index: usize, value: u8)
+	#[inline]
+	unsafe fn set_unchecked(&mut self, index: usize, value: u8)
 	{
 		let nth = (index % 16) as u32;
 
@@ -64,12 +74,14 @@ impl PackedArray for InMemoryPackedArray {
 		*self.0.get_unchecked_mut(index / 16) |= prepare_bits(value as u32, nth);
 	}
 
-	unsafe fn or_set(&mut self, index: usize, value: u8)
+	#[inline(always)]
+	unsafe fn or_set_unchecked(&mut self, index: usize, value: u8)
 	{
 		*self.0.get_unchecked_mut(index / 16) |= prepare_bits(value as u32, (index % 16) as u32);
 	}
 
-	unsafe fn unset_provided(&mut self, index: usize, value: u8)
+	#[inline(always)]
+	unsafe fn unset_provided_unchecked(&mut self, index: usize, value: u8)
 	{
 		*self.0.get_unchecked_mut(index / 16) &= !prepare_bits(value as u32, (index % 16) as u32)
 	}
@@ -78,22 +90,25 @@ impl PackedArray for InMemoryPackedArray {
 pub struct MMAPPackedArray {
 	len: usize,
 	word_len: usize,
-	mmap: MemoryMap,
-	file: File
+	mmap: MemoryMap
 }
+
+unsafe impl Sync for MMAPPackedArray {}
+unsafe impl Send for MMAPPackedArray {}
 
 impl MMAPPackedArray {
 	pub fn new(len: usize, file_name: &str) -> Self {
 		use std::fs;
-		use std::io::Write;
+		use std::io::{Write, Seek, SeekFrom};
 		use std::env;
 		use std::mem;
 
 		use std::os::unix::io::AsRawFd;
 
-		assert_eq!(len % 16, 0);
+		assert!(len % 16 == 0, "length must be divisible by 16, {} given", len);
 
 		let word_len = len / 16;
+		let byte_len = len / 4;
 		let mut bin_path = env::current_dir().unwrap();
 		bin_path.set_file_name(file_name);
 
@@ -106,9 +121,8 @@ impl MMAPPackedArray {
 			.unwrap();
 
 		// allocate data in the file for MMAP
-		for _ in 0..word_len {
-			file.write_all(&[0, 0, 0, 0]).unwrap();
-		}
+		file.seek(SeekFrom::Start(byte_len as u64 - 1)).unwrap();
+		file.write_all(&[0]).unwrap();
 
 		let mmapped = MemoryMap::new(mem::size_of::<u32>() * word_len, &[
 			MapOption::MapReadable,
@@ -120,8 +134,7 @@ impl MMAPPackedArray {
 		MMAPPackedArray {
 			len: len,
 			word_len: word_len,
-			mmap: mmapped,
-			file: file
+			mmap: mmapped
 		}
 	}
 
@@ -137,6 +150,7 @@ impl MMAPPackedArray {
 }
 
 impl PackedArray for MMAPPackedArray {
+	#[inline(always)]
 	fn len(&self) -> usize {
 		self.len
 	}
@@ -150,12 +164,14 @@ impl PackedArray for MMAPPackedArray {
 		}
 	}
 
-	unsafe fn get(&self, index: usize) -> u8
+	#[inline]
+	unsafe fn get_unchecked(&self, index: usize) -> u8
 	{
 		retrieve_bits(*self.get_unpacked_unchecked(index / 16), (index % 16) as u32) as u8
 	}
 
-	unsafe fn set(&mut self, index: usize, value: u8)
+	#[inline]
+	unsafe fn set_unchecked(&mut self, index: usize, value: u8)
 	{
 		let nth = (index % 16) as u32;
 
@@ -163,13 +179,15 @@ impl PackedArray for MMAPPackedArray {
 		*self.get_unpacked_unchecked_mut(index / 16) |= prepare_bits(value as u32, nth);
 	}
 
-	unsafe fn or_set(&mut self, index: usize, value: u8)
+	#[inline(always)]
+	unsafe fn or_set_unchecked(&mut self, index: usize, value: u8)
 	{
 		*self.get_unpacked_unchecked_mut(index / 16) |=
 			prepare_bits(value as u32, (index % 16) as u32);
 	}
 
-	unsafe fn unset_provided(&mut self, index: usize, value: u8)
+	#[inline(always)]
+	unsafe fn unset_provided_unchecked(&mut self, index: usize, value: u8)
 	{
 		*self.get_unpacked_unchecked_mut(index / 16) &=
 			!prepare_bits(value as u32, (index % 16) as u32)
