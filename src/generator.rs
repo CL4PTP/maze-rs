@@ -1,7 +1,7 @@
 extern crate rand;
 
 use super::*;
-use self::rand::{Isaac64Rng, Rng, SeedableRng};
+use self::rand::{XorShiftRng, Rng, SeedableRng};
 
 const S: u8 = 1;
 const E: u8 = 2;
@@ -22,14 +22,14 @@ pub trait Generator {
 
 pub struct RecursiveBacktrackGenerator<'a> {
 	maze: &'a mut Maze,
-	rng: Isaac64Rng
+	rng: XorShiftRng
 }
 
 impl<'a> RecursiveBacktrackGenerator<'a> {
-	pub fn new(maze: &'a mut Maze, seed: &[u64]) -> Self {
+	pub fn new(maze: &'a mut Maze) -> Self {
 		RecursiveBacktrackGenerator {
 			maze: maze,
-			rng: SeedableRng::from_seed(seed)
+			rng: XorShiftRng::new_unseeded()
 		}
 	}
 
@@ -74,14 +74,14 @@ impl<'a> Generator for RecursiveBacktrackGenerator<'a> {
 
 pub struct StackBacktrackGenerator<'a> {
 	maze: &'a mut Maze,
-	rng: Isaac64Rng
+	rng: XorShiftRng
 }
 
 impl<'a> StackBacktrackGenerator<'a> {
-	pub fn new(maze: &'a mut Maze, seed: &[u64]) -> Self {
+	pub fn new(maze: &'a mut Maze) -> Self {
 		StackBacktrackGenerator {
 			maze: maze,
-			rng: SeedableRng::from_seed(seed)
+			rng: XorShiftRng::new_unseeded()
 		}
 	}
 }
@@ -128,14 +128,14 @@ impl<'a> Generator for StackBacktrackGenerator<'a> {
 
 pub struct RecursiveDivisionGenerator<'a> {
 	maze: &'a mut Maze,
-	rng: Isaac64Rng
+	rng: XorShiftRng
 }
 
 impl<'a> RecursiveDivisionGenerator<'a> {
-	pub fn new(maze: &'a mut Maze, seed: &[u64]) -> Self {
+	pub fn new(maze: &'a mut Maze) -> Self {
 		RecursiveDivisionGenerator {
 			maze: maze,
-			rng: SeedableRng::from_seed(seed)
+			rng: XorShiftRng::new_unseeded()
 		}
 	}
 
@@ -223,14 +223,14 @@ impl<'a> Generator for RecursiveDivisionGenerator<'a> {
 
 pub struct StackDivisionGenerator<'a> {
 	maze: &'a mut Maze,
-	rng: Isaac64Rng
+	rng: XorShiftRng
 }
 
 impl<'a> StackDivisionGenerator<'a> {
-	pub fn new(maze: &'a mut Maze, seed: &[u64]) -> Self {
+	pub fn new(maze: &'a mut Maze) -> Self {
 		StackDivisionGenerator {
 			maze: maze,
-			rng: SeedableRng::from_seed(seed)
+			rng: XorShiftRng::new_unseeded()
 		}
 	}
 }
@@ -321,14 +321,14 @@ impl<'a> Generator for StackDivisionGenerator<'a> {
 
 pub struct SidewinderGenerator<'a> {
 	maze: &'a mut Maze,
-	rng: Isaac64Rng
+	rng: XorShiftRng
 }
 
 impl<'a> SidewinderGenerator<'a> {
-	pub fn new(maze: &'a mut Maze, seed: &[u64]) -> Self {
+	pub fn new(maze: &'a mut Maze) -> Self {
 		SidewinderGenerator {
 			maze: maze,
-			rng: SeedableRng::from_seed(seed)
+			rng: XorShiftRng::new_unseeded()
 		}
 	}
 }
@@ -359,14 +359,14 @@ impl<'a> Generator for SidewinderGenerator<'a> {
 
 pub struct ParallelSidewinderGenerator<'a> {
 	maze: &'a mut Maze,
-	rng: Isaac64Rng
+	rng: XorShiftRng
 }
 
 impl<'a> ParallelSidewinderGenerator<'a> {
-	pub fn new(maze: &'a mut Maze, seed: &[u64]) -> Self {
+	pub fn new(maze: &'a mut Maze) -> Self {
 		ParallelSidewinderGenerator {
 			maze: maze,
-			rng: SeedableRng::from_seed(seed)
+			rng: XorShiftRng::new_unseeded()
 		}
 	}
 }
