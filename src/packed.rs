@@ -13,14 +13,12 @@ fn prepare_bits(value: u32, nth: u32) -> u32 {
 	(value & 0b11) << (nth * 2)
 }
 
-pub trait PackedArray: Sync + Send {
+pub trait PackedArray: Send + Sync {
 	fn len(&self) -> usize;
 
 	fn fill(&mut self, fill: u8);
 
 	unsafe fn get_unchecked(&self, index: usize) -> u8;
-
-	unsafe fn get_unchecked_mut(&mut self, index: usize) -> u8;
 
 	unsafe fn set_unchecked(&mut self, index: usize, value: u8);
 
@@ -28,8 +26,6 @@ pub trait PackedArray: Sync + Send {
 
 	unsafe fn unset_provided_unchecked(&mut self, index: usize, value: u8);
 }
-
-
 
 pub struct InMemoryPackedArray (Vec<u32>);
 
