@@ -14,6 +14,8 @@ enum Orientation {
 }
 
 pub trait Generator {
+	fn set_seed(&mut self, seed: [u32; 4]);
+
 	fn generate(&mut self);
 }
 
@@ -60,6 +62,10 @@ impl<'a> RecursiveBacktrackGenerator<'a> {
 }
 
 impl<'a> Generator for RecursiveBacktrackGenerator<'a> {
+	fn set_seed(&mut self, seed: [u32; 4]) {
+		self.rng.reseed(seed);
+	}
+
 	fn generate(&mut self) {
 		self.recursive_carve(0, 0);
 	}
@@ -81,6 +87,10 @@ impl<'a> StackBacktrackGenerator<'a> {
 }
 
 impl<'a> Generator for StackBacktrackGenerator<'a> {
+	fn set_seed(&mut self, seed: [u32; 4]) {
+		self.rng.reseed(seed);
+	}
+	
 	fn generate(&mut self) {
 		const NUM_DIRECTIONS: i64 = 4;
 		static DIRECTIONS: [u8; 4] = [S, E, W, N];
@@ -187,6 +197,10 @@ impl<'a> RecursiveDivisionGenerator<'a> {
 }
 
 impl<'a> Generator for RecursiveDivisionGenerator<'a> {
+	fn set_seed(&mut self, seed: [u32; 4]) {
+		self.rng.reseed(seed);
+	}
+	
 	fn generate(&mut self) {
 		self.maze.fill(0xFF);
 
@@ -222,6 +236,10 @@ impl<'a> StackDivisionGenerator<'a> {
 }
 
 impl<'a> Generator for StackDivisionGenerator<'a> {
+	fn set_seed(&mut self, seed: [u32; 4]) {
+		self.rng.reseed(seed);
+	}
+	
 	fn generate(&mut self) {
 		self.maze.fill(0xFF);
 
@@ -316,6 +334,10 @@ impl<'a> SidewinderGenerator<'a> {
 }
 
 impl<'a> Generator for SidewinderGenerator<'a> {
+	fn set_seed(&mut self, seed: [u32; 4]) {
+		self.rng.reseed(seed);
+	}
+	
 	fn generate(&mut self) {
 		for y in 0..self.maze.height() {
 			let mut run_start = 0;
@@ -350,6 +372,10 @@ impl<'a> ParallelSidewinderGenerator<'a> {
 }
 
 impl<'a> Generator for ParallelSidewinderGenerator<'a> {
+	fn set_seed(&mut self, seed: [u32; 4]) {
+		self.rng.reseed(seed);
+	}
+
 	fn generate(&mut self) {
 		use threadpool::ScopedPool;
 		use std::sync::Arc;

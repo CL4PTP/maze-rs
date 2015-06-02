@@ -31,7 +31,7 @@ pub enum BackingType {
 pub struct MazeBuilder {
 	width: i64,
 	height: i64,
-	seed: u64 ,
+	seed: Option<[u32; 4]>,
 	backing_type: BackingType,
 	generator_type: GeneratorType
 }
@@ -41,7 +41,7 @@ impl<'a> MazeBuilder {
 		MazeBuilder {
 			width: 0,
 			height: 0,
-			seed: 0,
+			seed: None,
 			backing_type: BackingType::InMemory,
 			generator_type: GeneratorType::RecursiveBacktrack
 		}
@@ -64,14 +64,14 @@ impl<'a> MazeBuilder {
 	}
 
 	pub fn seed(mut self, seed: u64) ->Self {
-		self.seed = seed; self
+		self.seed = Some([(seed >> 32) as u32, seed as u32, 0, 0]); self
 	}
 
 	pub fn build(self) -> Maze {
 		let mut maze = Maze::new(self.width, self.height, self.backing_type);
 
 		maze.generator_type = self.generator_type;
-		maze.generate(&[self.seed]);
+		maze.generate(self.seed);
 
 		maze
 	}
@@ -109,29 +109,35 @@ impl Maze {
 		}
 	}
 
-	pub fn generate(&mut self, seed: &[u64]) {
+	pub fn generate(&mut self, seed: Option<[u32; 4]>) {
 		use self::GeneratorType;
 		use self::generator::*;
 
 		let mut generator: Box<Generator> = match self.generator_type {
 			GeneratorType::RecursiveBacktrack =>
-				Box::new(RecursiveBacktrackGenerator::new(self, seed)),
+				Box::new(RecursiveBacktrackGenerator::new(self)),
 
 			GeneratorType::StackBacktrack =>
-				Box::new(StackBacktrackGenerator::new(self, seed)),
+				Box::new(StackBacktrackGenerator::new(self)),
 
 			GeneratorType::RecursiveDivision => 
-				Box::new(RecursiveDivisionGenerator::new(self, seed)),
+				Box::new(RecursiveDivisionGenerator::new(self)),
 
 			GeneratorType::StackDivision => 
-				Box::new(StackDivisionGenerator::new(self, seed)),
+				Box::new(StackDivisionGenerator::new(self)),
 
 			GeneratorType::Sidewinder => 
-				Box::new(SidewinderGenerator::new(self, seed)),
+				Box::new(SidewinderGenerator::new(self)),
+
+			GeneratorType::ParallelSidewinder => 
+				Box::new(ParallelSidewinderGenerator::new(self)),
 
 			_ => panic!("\"{:?}\" generator algorithm not yet implemented", self.generator_type)
 		};
 
+		if let Some(seed) = seed {
+			generator.set_seed(seed);
+		}
 		generator.generate();
 	}
 
