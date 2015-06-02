@@ -377,17 +377,37 @@ impl<'a> Generator for ParallelSidewinderGenerator<'a> {
 	}
 
 	fn generate(&mut self) {
+		#![allow(mutable_transmutes)]
 		use threadpool::ScopedPool;
 		use std::sync::Arc;
+		use std::mem::transmute;
 
 		let pool = ScopedPool::new(8);
+		let maze = Arc::new(&mut *self.maze);
+		let rng = Arc::new(&mut self.rng);
 
-		for y in 0..self.maze.height() {
+		for y in 0..maze.height() {
+			let maze = maze.clone();
+			let rng = rng.clone();
 
-			pool.execute(|| {
-				let mut y = y;
-				unsafe { Maze::or_set_unchecked(self.maze, 0, y - 1, S); }
-				// unsafe { (*child_maze).or_set_unchecked(0, y - 1, S); }
+			pool.execute(move || unsafe {
+				// let rng = ref self.rng;
+				let mut run_start = 0;
+				let maze: &mut Maze = transmute(&**maze);
+				// WARNING: THE FOLLOWING ALMOST CERTAINLY CREATES A DATA RACE!
+				// it's only acceptable because just the appearance of randomness is sufficient
+				let rng: &mut XorShiftRng = transmute(&**rng);
+
+				for x in 0..maze.width() {
+					if y > 0 && (x + 1 == maze.width() || rng.next_f64() > 0.50) {
+						let carve_point = run_start + rng.gen_range(0, x - run_start + 1);
+
+						maze.or_set_unchecked(carve_point, y - 1, S);
+						run_start = x + 1;
+					} else if x + 1 < maze.width() {
+						maze.or_set_unchecked(x, y, E);
+					}
+				}
 			});
 		}
 	}
