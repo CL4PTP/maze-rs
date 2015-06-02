@@ -178,7 +178,7 @@ impl<'a> RecursiveDivisionGenerator<'a> {
 		for i in 0..length {
 			// except for where we've chosen the hole to be
 			if i != opening {
-				self.maze.unset_provided(mx + dx * i, my + dy * i, direction);
+				unsafe { self.maze.unset_provided_unchecked(mx + dx * i, my + dy * i, direction); }
 			}
 		}
 
@@ -208,12 +208,12 @@ impl<'a> Generator for RecursiveDivisionGenerator<'a> {
 
 		// add walls on the south side of the maze
 		for x in 0..self.maze.width() {
-			self.maze.unset_provided(x, maze_height - 1, S);
+			unsafe { self.maze.unset_provided_unchecked(x, maze_height - 1, S); }
 		}
 
 		// add walls on the east side of the maze
 		for y in 0..self.maze.width() {
-			self.maze.unset_provided(maze_width - 1, y, E);
+			unsafe { self.maze.unset_provided_unchecked(maze_width - 1, y, E); }
 		}
 
 		self.recursive_divide(0, 0, maze_width, maze_height);
@@ -247,12 +247,12 @@ impl<'a> Generator for StackDivisionGenerator<'a> {
 
 		// add walls on the south side of the maze
 		for x in 0..self.maze.width() {
-			self.maze.unset_provided(x, maze_height - 1, S);
+			unsafe { self.maze.unset_provided_unchecked(x, maze_height - 1, S); }
 		}
 
 		// add walls on the east side of the maze
 		for y in 0..self.maze.width() {
-			self.maze.unset_provided(maze_width - 1, y, E);
+			unsafe { self.maze.unset_provided_unchecked(maze_width - 1, y, E); }
 		}
 
 		let mut stack = Vec::with_capacity(self.maze.width() as usize);
