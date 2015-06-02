@@ -339,17 +339,20 @@ impl<'a> Generator for SidewinderGenerator<'a> {
 	}
 	
 	fn generate(&mut self) {
-		for y in 0..self.maze.height() {
+		let maze = &mut *self.maze;
+
+		for y in 0..maze.height() {
 			let mut run_start = 0;
 
-			for x in 0..self.maze.width() {
-				if y > 0 && (x + 1 == self.maze.width() || self.rng.next_f64() > 0.50) {
-					let carve_point = run_start + self.rng.gen_range(0, x - run_start + 1);
+			for x in 0..maze.width() {
+				if y > 0 && (x + 1 == maze.width() || self.rng.next_f64() > 0.50) {
+					let carve_point =
+						run_start +(self.rng.next_f64() * (x - run_start + 1) as f64) as i64;
 
-					unsafe { self.maze.or_set_unchecked(carve_point, y - 1, S); }
+					unsafe { maze.or_set_unchecked(carve_point, y - 1, S); }
 					run_start = x + 1;
-				} else if x + 1 < self.maze.width() {
-					unsafe { self.maze.or_set_unchecked(x, y, E); }
+				} else if x + 1 < maze.width() {
+					unsafe { maze.or_set_unchecked(x, y, E); }
 				}
 			}
 		}
