@@ -20,13 +20,13 @@ pub trait Generator {
 }
 
 
-pub struct RecursiveBacktrackGenerator<'a> {
-	maze: &'a mut Maze,
+pub struct RecursiveBacktrackGenerator<'a, P: 'a + PackedArray> {
+	maze: &'a mut Maze<P>,
 	rng: XorShiftRng
 }
 
-impl<'a> RecursiveBacktrackGenerator<'a> {
-	pub fn new(maze: &'a mut Maze) -> Self {
+impl<'a, P: PackedArray> RecursiveBacktrackGenerator<'a, P> {
+	pub fn new(maze: &'a mut Maze<P>) -> Self {
 		RecursiveBacktrackGenerator {
 			maze: maze,
 			rng: XorShiftRng::new_unseeded()
@@ -61,7 +61,7 @@ impl<'a> RecursiveBacktrackGenerator<'a> {
 	}
 }
 
-impl<'a> Generator for RecursiveBacktrackGenerator<'a> {
+impl<'a, P: PackedArray> Generator for RecursiveBacktrackGenerator<'a, P> {
 	fn set_seed(&mut self, seed: [u32; 4]) {
 		self.rng.reseed(seed);
 	}
@@ -72,13 +72,13 @@ impl<'a> Generator for RecursiveBacktrackGenerator<'a> {
 }
 
 
-pub struct StackBacktrackGenerator<'a> {
-	maze: &'a mut Maze,
+pub struct StackBacktrackGenerator<'a, P: 'a + PackedArray> {
+	maze: &'a mut Maze<P>,
 	rng: XorShiftRng
 }
 
-impl<'a> StackBacktrackGenerator<'a> {
-	pub fn new(maze: &'a mut Maze) -> Self {
+impl<'a, P: PackedArray> StackBacktrackGenerator<'a, P> {
+	pub fn new(maze: &'a mut Maze<P>) -> Self {
 		StackBacktrackGenerator {
 			maze: maze,
 			rng: XorShiftRng::new_unseeded()
@@ -86,7 +86,7 @@ impl<'a> StackBacktrackGenerator<'a> {
 	}
 }
 
-impl<'a> Generator for StackBacktrackGenerator<'a> {
+impl<'a, P: PackedArray> Generator for StackBacktrackGenerator<'a, P> {
 	fn set_seed(&mut self, seed: [u32; 4]) {
 		self.rng.reseed(seed);
 	}
@@ -126,13 +126,13 @@ impl<'a> Generator for StackBacktrackGenerator<'a> {
 }
 
 
-pub struct RecursiveDivisionGenerator<'a> {
-	maze: &'a mut Maze,
+pub struct RecursiveDivisionGenerator<'a, P: 'a + PackedArray> {
+	maze: &'a mut Maze<P>,
 	rng: XorShiftRng
 }
 
-impl<'a> RecursiveDivisionGenerator<'a> {
-	pub fn new(maze: &'a mut Maze) -> Self {
+impl<'a, P: PackedArray> RecursiveDivisionGenerator<'a, P> {
+	pub fn new(maze: &'a mut Maze<P>) -> Self {
 		RecursiveDivisionGenerator {
 			maze: maze,
 			rng: XorShiftRng::new_unseeded()
@@ -196,7 +196,7 @@ impl<'a> RecursiveDivisionGenerator<'a> {
 	}
 }
 
-impl<'a> Generator for RecursiveDivisionGenerator<'a> {
+impl<'a, P: PackedArray> Generator for RecursiveDivisionGenerator<'a, P> {
 	fn set_seed(&mut self, seed: [u32; 4]) {
 		self.rng.reseed(seed);
 	}
@@ -221,13 +221,13 @@ impl<'a> Generator for RecursiveDivisionGenerator<'a> {
 }
 
 
-pub struct StackDivisionGenerator<'a> {
-	maze: &'a mut Maze,
+pub struct StackDivisionGenerator<'a, P: 'a + PackedArray> {
+	maze: &'a mut Maze<P>,
 	rng: XorShiftRng
 }
 
-impl<'a> StackDivisionGenerator<'a> {
-	pub fn new(maze: &'a mut Maze) -> Self {
+impl<'a, P: PackedArray> StackDivisionGenerator<'a, P> {
+	pub fn new(maze: &'a mut Maze<P>) -> Self {
 		StackDivisionGenerator {
 			maze: maze,
 			rng: XorShiftRng::new_unseeded()
@@ -235,7 +235,7 @@ impl<'a> StackDivisionGenerator<'a> {
 	}
 }
 
-impl<'a> Generator for StackDivisionGenerator<'a> {
+impl<'a, P: PackedArray> Generator for StackDivisionGenerator<'a, P> {
 	fn set_seed(&mut self, seed: [u32; 4]) {
 		self.rng.reseed(seed);
 	}
@@ -319,13 +319,13 @@ impl<'a> Generator for StackDivisionGenerator<'a> {
 }
 
 
-pub struct SidewinderGenerator<'a> {
-	maze: &'a mut Maze,
+pub struct SidewinderGenerator<'a, P: 'a + PackedArray> {
+	maze: &'a mut Maze<P>,
 	rng: XorShiftRng
 }
 
-impl<'a> SidewinderGenerator<'a> {
-	pub fn new(maze: &'a mut Maze) -> Self {
+impl<'a, P: PackedArray> SidewinderGenerator<'a, P> {
+	pub fn new(maze: &'a mut Maze<P>) -> Self {
 		SidewinderGenerator {
 			maze: maze,
 			rng: XorShiftRng::new_unseeded()
@@ -333,7 +333,7 @@ impl<'a> SidewinderGenerator<'a> {
 	}
 }
 
-impl<'a> Generator for SidewinderGenerator<'a> {
+impl<'a, P: PackedArray> Generator for SidewinderGenerator<'a, P> {
 	fn set_seed(&mut self, seed: [u32; 4]) {
 		self.rng.reseed(seed);
 	}
@@ -347,7 +347,7 @@ impl<'a> Generator for SidewinderGenerator<'a> {
 			for x in 0..maze.width() {
 				if y > 0 && (x + 1 == maze.width() || self.rng.next_f64() > 0.50) {
 					let carve_point =
-						run_start +(self.rng.next_f64() * (x - run_start + 1) as f64) as i64;
+						run_start + (self.rng.next_f64() * (x - run_start + 1) as f64) as i64;
 
 					unsafe { maze.or_set_unchecked(carve_point, y - 1, S); }
 					run_start = x + 1;
@@ -360,13 +360,13 @@ impl<'a> Generator for SidewinderGenerator<'a> {
 }
 
 
-pub struct ParallelSidewinderGenerator<'a> {
-	maze: &'a mut Maze,
+pub struct ParallelSidewinderGenerator<'a, P: 'a + PackedArray> {
+	maze: &'a mut Maze<P>,
 	rng: XorShiftRng
 }
 
-impl<'a> ParallelSidewinderGenerator<'a> {
-	pub fn new(maze: &'a mut Maze) -> Self {
+impl<'a, P: PackedArray> ParallelSidewinderGenerator<'a, P> {
+	pub fn new(maze: &'a mut Maze<P>) -> Self {
 		ParallelSidewinderGenerator {
 			maze: maze,
 			rng: XorShiftRng::new_unseeded()
@@ -374,7 +374,7 @@ impl<'a> ParallelSidewinderGenerator<'a> {
 	}
 }
 
-impl<'a> Generator for ParallelSidewinderGenerator<'a> {
+impl<'a, P: PackedArray> Generator for ParallelSidewinderGenerator<'a, P> {
 	fn set_seed(&mut self, seed: [u32; 4]) {
 		self.rng.reseed(seed);
 	}
@@ -396,7 +396,7 @@ impl<'a> Generator for ParallelSidewinderGenerator<'a> {
 			pool.execute(move || unsafe {
 				// let rng = ref self.rng;
 				let mut run_start = 0;
-				let maze: &mut Maze = transmute(&**maze);
+				let maze: &mut Maze<P> = transmute(&**maze);
 				// WARNING: THE FOLLOWING ALMOST CERTAINLY CREATES A DATA RACE!
 				// it's only acceptable because just the appearance of randomness is sufficient
 				let rng: &mut XorShiftRng = transmute(&**rng);

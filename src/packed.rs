@@ -3,6 +3,10 @@ extern crate libc;
 
 use self::mmap::*;
 
+pub enum PackedOption {
+	MMAPFilePath(String)
+}
+
 #[inline(always)]
 fn retrieve_bits(value: u32, nth: u32) -> u32 {
 	(value >> (nth * 2)) & 0b11
@@ -14,6 +18,8 @@ fn prepare_bits(value: u32, nth: u32) -> u32 {
 }
 
 pub trait PackedArray: Send + Sync {
+	fn new(len: usize, options: &[PackedOption]) -> Self;
+
 	fn len(&self) -> usize;
 
 	fn fill(&mut self, fill: u8);
@@ -32,15 +38,13 @@ pub struct InMemoryPackedArray (Vec<u32>);
 unsafe impl Sync for InMemoryPackedArray {}
 unsafe impl Send for InMemoryPackedArray {}
 
-impl InMemoryPackedArray {
-	pub fn new(len: usize) -> Self {
+impl PackedArray for InMemoryPackedArray {
+	fn new(len: usize, _: &[PackedOption]) -> Self {
 		assert!(len % 16 == 0, "length must be divisible by 16, {} given", len);
 
 		InMemoryPackedArray(vec![0; len / 16])
 	}
-}
 
-impl PackedArray for InMemoryPackedArray {
 	#[inline(always)]
 	fn len(&self) -> usize {
 		self.0.len() * 16
@@ -93,15 +97,34 @@ unsafe impl Sync for MMAPPackedArray {}
 unsafe impl Send for MMAPPackedArray {}
 
 impl MMAPPackedArray {
-	pub fn new(len: usize, file_name: &str) -> Self {
+	#[inline]
+	unsafe fn get_unpacked_unchecked(&self, index: usize) -> *const u32 {
+		(self.mmap.data() as *const u32).offset(index as isize)
+	}
+
+	#[inline]
+	unsafe fn get_unpacked_unchecked_mut(&mut self, index: usize) -> *mut u32 {
+		(self.mmap.data() as *mut u32).offset(index as isize)
+	}
+}
+
+impl PackedArray for MMAPPackedArray {
+	fn new(len: usize, options: &[PackedOption]) -> Self {
 		use std::fs;
 		use std::io::{Write, Seek, SeekFrom};
 		use std::env;
 		use std::mem;
-
 		use std::os::unix::io::AsRawFd;
 
 		assert!(len % 16 == 0, "length must be divisible by 16, {} given", len);
+
+		let mut file_name = "tmp.bin";
+
+		for o in options {
+			match *o {
+				PackedOption::MMAPFilePath(ref in_file_name) => file_name = in_file_name
+			}
+		}
 
 		let word_len = len / 16;
 		let byte_len = len / 4;
@@ -134,18 +157,6 @@ impl MMAPPackedArray {
 		}
 	}
 
-	#[inline]
-	unsafe fn get_unpacked_unchecked(&self, index: usize) -> *const u32 {
-		(self.mmap.data() as *const u32).offset(index as isize)
-	}
-
-	#[inline]
-	unsafe fn get_unpacked_unchecked_mut(&mut self, index: usize) -> *mut u32 {
-		(self.mmap.data() as *mut u32).offset(index as isize)
-	}
-}
-
-impl PackedArray for MMAPPackedArray {
 	#[inline(always)]
 	fn len(&self) -> usize {
 		self.len

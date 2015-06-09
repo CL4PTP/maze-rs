@@ -5,7 +5,7 @@ extern crate threadpool;
 mod packed;
 mod generator;
 
-use packed::*;
+pub use packed::*;
 use std::fmt::{Display, Formatter, Error};
 
 const S: u8 = 1;
@@ -22,17 +22,10 @@ pub enum GeneratorType {
 	EllersAlgorithm
 }
 
-#[derive(Debug)]
-pub enum BackingType {
-	InMemory,
-	MMAP(String)
-}
-
 pub struct MazeBuilder {
 	width: i64,
 	height: i64,
 	seed: Option<[u32; 4]>,
-	backing_type: BackingType,
 	generator_type: GeneratorType
 }
 
@@ -42,7 +35,6 @@ impl<'a> MazeBuilder {
 			width: 0,
 			height: 0,
 			seed: None,
-			backing_type: BackingType::InMemory,
 			generator_type: GeneratorType::RecursiveBacktrack
 		}
 	}
@@ -55,10 +47,6 @@ impl<'a> MazeBuilder {
 		self.height = height; self
 	}
 
-	pub fn backing_type(mut self, backing_type: BackingType) -> Self {
-		self.backing_type = backing_type; self
-	}
-
 	pub fn generate_using(mut self, generator_type: GeneratorType) -> Self {
 		self.generator_type = generator_type; self
 	}
@@ -67,8 +55,8 @@ impl<'a> MazeBuilder {
 		self.seed = Some([(seed >> 32) as u32, seed as u32, 0, 0]); self
 	}
 
-	pub fn build(self) -> Maze {
-		let mut maze = Maze::new(self.width, self.height, self.backing_type);
+	pub fn build<P: PackedArray>(self, backing_options: &[PackedOption]) -> Maze<P> {
+		let mut maze = Maze::<P>::new(self.width, self.height, backing_options);
 
 		maze.generator_type = self.generator_type;
 		maze.generate(self.seed);
@@ -77,35 +65,24 @@ impl<'a> MazeBuilder {
 	}
 }
 
-pub struct Maze {
+pub struct Maze<P>
+	where P: PackedArray {
 	width: i64,
 	height: i64,
 	
 	pub generator_type: GeneratorType,
-	pub backing_type: BackingType,
-
-	array: Box<PackedArray> // row major
+	array: P // row major
 }
 
-impl Maze {
-	pub fn new(width: i64, height: i64, backing_type: BackingType) -> Self {
-		use self::BackingType;
-
+impl<P: PackedArray> Maze<P> {
+	pub fn new(width: i64, height: i64, options: &[PackedOption]) -> Maze<P> {
 		let len = (width as usize).checked_mul(height as usize).expect("dimension overflow");
+
 		Maze {
 			width: width,
 			height: height,
-
-			array: match backing_type {
-				BackingType::InMemory =>
-					Box::new(InMemoryPackedArray::new(len)) as Box<PackedArray>,
-
-				BackingType::MMAP(ref path) =>
-					Box::new(MMAPPackedArray::new(len, path)) as Box<PackedArray>
-			},
-
 			generator_type: GeneratorType::RecursiveBacktrack,
-			backing_type: backing_type
+			array: P::new(len, options)
 		}
 	}
 
@@ -208,7 +185,7 @@ impl Maze {
 	}
 }
 
-impl Display for Maze {
+impl<P: PackedArray> Display for Maze<P> {
 	fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
 		let mut buf = String::with_capacity((self.width * (self.height + 1)) as usize);
 
