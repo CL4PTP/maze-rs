@@ -381,37 +381,49 @@ impl<'a, P: PackedArray> Generator for ParallelSidewinderGenerator<'a, P> {
 
 	fn generate(&mut self) {
 		#![allow(mutable_transmutes)]
-		use threadpool::ScopedPool;
+		use std::thread;
 		use std::sync::Arc;
 		use std::mem::transmute;
+		use num_cpus;
 
-		let pool = ScopedPool::new(8);
+		let num_cores = num_cpus::get() as i64;
+		let rows_per_thread = self.maze.height() / num_cores;
+
+		assert!(self.maze.height() % num_cores == 0,
+			"Maze height must be divisible by {}, but {} given", num_cores, self.maze.height());
+
 		let maze = Arc::new(&mut *self.maze);
-		let rng = Arc::new(&mut self.rng);
+		let rng = self.rng.clone();
 
-		for y in 0..maze.height() {
+        let mut threads = Vec::with_capacity(num_cores as usize);
+
+		for tn in 0..num_cores {
 			let maze = maze.clone();
-			let rng = rng.clone();
+			let mut rng = rng.clone();
 
-			pool.execute(move || unsafe {
-				// let rng = ref self.rng;
-				let mut run_start = 0;
-				let maze: &mut Maze<P> = transmute(&**maze);
-				// WARNING: THE FOLLOWING ALMOST CERTAINLY CREATES A DATA RACE!
-				// it's only acceptable because just the appearance of randomness is sufficient
-				let rng: &mut XorShiftRng = transmute(&**rng);
+			threads.push(thread::scoped(move || {
+				let maze: &mut Maze<P> = unsafe { transmute(&**maze) };
 
-				for x in 0..maze.width() {
-					if y > 0 && (x + 1 == maze.width() || rng.next_f64() > 0.50) {
-						let carve_point = run_start + rng.gen_range(0, x - run_start + 1);
+				for y in (tn * rows_per_thread)..((tn + 1) * rows_per_thread) {
+					let mut run_start = 0;
 
-						maze.or_set_unchecked(carve_point, y - 1, S);
-						run_start = x + 1;
-					} else if x + 1 < maze.width() {
-						maze.or_set_unchecked(x, y, E);
+					for x in 0..maze.width() {
+						if y > 0 && (x + 1 == maze.width() || rng.next_f64() > 0.50) {
+							let carve_point =
+								run_start + (rng.next_f64() * (x - run_start + 1) as f64) as i64;
+
+							unsafe { maze.or_set_unchecked(carve_point, y - 1, S); }
+							run_start = x + 1;
+						} else if x + 1 < maze.width() {
+							unsafe { maze.or_set_unchecked(x, y, E); }
+						}
 					}
 				}
-			});
+			}));
 		}
+
+		for thread in threads {
+            thread.join();
+        }
 	}
 }

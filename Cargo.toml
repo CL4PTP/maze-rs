@@ -7,7 +7,4 @@ authors = ["Bence Meszaros <bence.me@gmail.com>"]
 rand = "*"
 mmap = "*"
 num = "*"
-
-[dependencies.threadpool]
-version = "*"
-features = ["scoped-pool"]
+num_cpus = "*"

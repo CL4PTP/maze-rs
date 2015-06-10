@@ -1,6 +1,7 @@
 #![feature(libc)]
+#![feature(scoped)]
 extern crate num;
-extern crate threadpool;
+extern crate num_cpus;
 
 mod packed;
 mod generator;
