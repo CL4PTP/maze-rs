@@ -393,11 +393,14 @@ impl<'a, P: PackedArray> Generator for ParallelSidewinderGenerator<'a, P> {
 			"Maze height must be divisible by {}, but {} given", num_cores, self.maze.height());
 
 		let maze = Arc::new(&mut *self.maze);
-		let rng = self.rng.clone();
+		let mut rng = self.rng.clone();
 
         let mut threads = Vec::with_capacity(num_cores as usize);
 
 		for tn in 0..num_cores {
+			let (x,y,z,w) = (rng.next_u32(), rng.next_u32(), rng.next_u32(), rng.next_u32());
+			rng.reseed([w,z,x,y]);
+
 			let maze = maze.clone();
 			let mut rng = rng.clone();
 
