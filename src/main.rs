@@ -13,7 +13,8 @@ fn main() {
 	let _maze = MazeBuilder::new()
 		.width(width)
 		.height(height)
-		.generate_using(GeneratorType::Sidewinder)
+		// .generate_using(GeneratorType::Sidewinder)
+		.generate_using(GeneratorType::ParallelSidewinder)
 		.build::<MMAPPackedArray>(&[PackedOption::MMAPFilePath(format!("maze_{}x{}.bin", width, height))]);
 		// .build::<InMemoryPackedArray>(&[]);
 	

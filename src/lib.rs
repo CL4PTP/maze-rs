@@ -146,6 +146,7 @@ impl<P: PackedArray> Maze<P> {
 		self.array.get_unchecked((x + y * self.width) as usize)
 	}
 
+	#[allow(dead_code)]
 	fn set(&mut self, x: i64, y: i64, value: u8) {
 		if 0 <= x && x < self.width && 0 <= y && y < self.height {
 			unsafe {
@@ -172,6 +173,7 @@ impl<P: PackedArray> Maze<P> {
 		self.array.or_set_unchecked((x + y * self.width) as usize, value);
 	}
 
+	#[allow(dead_code)]
 	fn unset_provided(&mut self, x: i64, y: i64, value: u8) {
 		if 0 <= x && x < self.width && 0 <= y && y < self.height {
 			unsafe {
