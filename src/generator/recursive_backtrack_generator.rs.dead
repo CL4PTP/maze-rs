@@ -1,0 +1,50 @@
+pub struct RecursiveBacktrackGenerator<'a, P: 'a + PackedArray> {
+	maze: &'a mut Maze<P>,
+	rng: XorShiftRng
+}
+
+impl<'a, P: PackedArray> RecursiveBacktrackGenerator<'a, P> {
+	pub fn new(maze: &'a mut Maze<P>) -> Self {
+		RecursiveBacktrackGenerator {
+			maze: maze,
+			rng: XorShiftRng::new_unseeded()
+		}
+	}
+
+	pub fn recursive_carve(&mut self, cx: i64, cy: i64) {
+		let direction_offset: i64 = self.rng.gen_range(0, NUM_DIRECTIONS);
+
+		static DIRECTIONS: [u8; 4] = [S, E, W, N];
+		const NUM_DIRECTIONS: i64 = 4;
+		static OPPOSITE: [u8; 9] = [0,  N, W, 0, S,  0, 0, 0, E];
+
+		for i in 0..4 {
+			let direction = DIRECTIONS[((direction_offset + i * 3) % NUM_DIRECTIONS) as usize];
+			let nx = cx + if direction == E { 1 } else if direction == W { -1 } else { 0 };
+			let ny = cy + if direction == S { 1 } else if direction == N { -1 } else { 0 };
+			let mut val = self.maze.get(nx, ny);
+			if nx - 1 >= 0 { val |= self.maze.get(nx - 1, ny) & E; }
+			if ny - 1 >= 0 { val |= self.maze.get(nx, ny - 1) & S; }
+			
+			if val == 0 {
+				if direction == S || direction == E {
+					self.maze.or_set(cx, cy, direction);
+				} else {
+					self.maze.or_set(nx, ny, OPPOSITE[direction as usize]);
+				}
+
+				self.recursive_carve(nx, ny);
+			}
+		}
+	}
+}
+
+impl<'a, P: PackedArray> Generator for RecursiveBacktrackGenerator<'a, P> {
+	fn set_seed(&mut self, seed: [u32; 4]) {
+		self.rng.reseed(seed);
+	}
+
+	fn generate(&mut self) {
+		self.recursive_carve(0, 0);
+	}
+}

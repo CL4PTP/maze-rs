@@ -3,8 +3,15 @@ name = "maze"
 version = "0.3.0"
 authors = ["Bence Meszaros <bence.me@gmail.com>"]
 
+[lib]
+crate-type = ["rlib", "dylib", "staticlib"]
+
 [dependencies]
-rand = "*"
-mmap = "*"
-num = "*"
-num_cpus = "*"
+rand = "0.3.8"
+mmap = "0.1.1"
+num = "0.1.25"
+num_cpus = "0.2.6"
+docopt = "0.6.69
+docopt_macros = "0.6.69"
+rustc-serialize = "0.3.15"
+regex = "0.1.41"

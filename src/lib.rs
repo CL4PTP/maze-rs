@@ -1,16 +1,14 @@
 #![feature(libc)]
 #![feature(scoped)]
 extern crate num;
-extern crate num_cpus;
+
+pub use self::packed::*;
+pub use self::generator::*;
 
 mod packed;
 mod generator;
 
-pub use packed::*;
 use std::fmt::{Display, Formatter, Error};
-
-const S: u8 = 1;
-const E: u8 = 2;
 
 #[derive(Debug)]
 pub enum GeneratorType {
@@ -30,7 +28,7 @@ pub struct MazeBuilder {
 	generator_type: GeneratorType
 }
 
-impl<'a> MazeBuilder {
+impl MazeBuilder {
 	pub fn new() -> Self {
 		MazeBuilder {
 			width: 0,
@@ -79,36 +77,44 @@ impl<P: PackedArray> Maze<P> {
 	pub fn new(width: i64, height: i64, options: &[PackedOption]) -> Maze<P> {
 		let len = (width as usize).checked_mul(height as usize).expect("dimension overflow");
 
+		unsafe { Maze::from_raw_parts(
+			width,
+			height,
+			GeneratorType::RecursiveBacktrack,
+			P::new(len, options)
+		) }
+	}
+
+	pub unsafe fn from_raw_parts(width: i64, height: i64, generator_type: GeneratorType, array: P) -> Maze<P> {
 		Maze {
 			width: width,
 			height: height,
-			generator_type: GeneratorType::RecursiveBacktrack,
-			array: P::new(len, options)
+			generator_type: generator_type,
+			array: array
 		}
 	}
 
 	pub fn generate(&mut self, seed: Option<[u32; 4]>) {
 		use self::GeneratorType;
-		use self::generator::*;
 
 		let mut generator: Box<Generator> = match self.generator_type {
-			GeneratorType::RecursiveBacktrack =>
-				Box::new(RecursiveBacktrackGenerator::new(self)),
-
-			GeneratorType::StackBacktrack =>
-				Box::new(StackBacktrackGenerator::new(self)),
-
-			GeneratorType::RecursiveDivision => 
-				Box::new(RecursiveDivisionGenerator::new(self)),
-
-			GeneratorType::StackDivision => 
-				Box::new(StackDivisionGenerator::new(self)),
-
 			GeneratorType::Sidewinder => 
 				Box::new(SidewinderGenerator::new(self)),
 
-			GeneratorType::ParallelSidewinder => 
-				Box::new(ParallelSidewinderGenerator::new(self)),
+			// GeneratorType::RecursiveBacktrack =>
+			// 	Box::new(RecursiveBacktrackGenerator::new(self)),
+
+			// GeneratorType::StackBacktrack =>
+			// 	Box::new(StackBacktrackGenerator::new(self)),
+
+			// GeneratorType::RecursiveDivision => 
+			// 	Box::new(RecursiveDivisionGenerator::new(self)),
+
+			// GeneratorType::StackDivision => 
+			// 	Box::new(StackDivisionGenerator::new(self)),
+
+			// GeneratorType::ParallelSidewinder => 
+			// 	Box::new(ParallelSidewinderGenerator::new(self)),
 
 			_ => panic!("\"{:?}\" generator algorithm not yet implemented", self.generator_type)
 		};
@@ -120,20 +126,20 @@ impl<P: PackedArray> Maze<P> {
 	}
 
 	#[inline(always)]
-	fn width(&self) -> i64 {
+	pub fn width(&self) -> i64 {
 		self.width
 	}
 
 	#[inline(always)]
-	fn height(&self) -> i64 {
+	pub fn height(&self) -> i64 {
 		self.height
 	}
 
-	fn fill(&mut self, fill: u8) {
+	pub fn fill(&mut self, fill: u8) {
 		self.array.fill(fill);
 	}
 
-	fn get(&self, x: i64, y: i64) -> u8 {
+	pub fn get(&self, x: i64, y: i64) -> u8 {
 		if 0 <= x && x < self.width && 0 <= y && y < self.height {
 			unsafe { self.get_unchecked(x, y) }
 		} else {
@@ -142,12 +148,12 @@ impl<P: PackedArray> Maze<P> {
 	}
 
 	#[inline(always)]
-	unsafe fn get_unchecked(&self, x: i64, y: i64) -> u8 {
+	pub unsafe fn get_unchecked(&self, x: i64, y: i64) -> u8 {
 		self.array.get_unchecked((x + y * self.width) as usize)
 	}
 
 	#[allow(dead_code)]
-	fn set(&mut self, x: i64, y: i64, value: u8) {
+	pub fn set(&mut self, x: i64, y: i64, value: u8) {
 		if 0 <= x && x < self.width && 0 <= y && y < self.height {
 			unsafe {
 				self.set_unchecked(x, y, value);
@@ -156,11 +162,11 @@ impl<P: PackedArray> Maze<P> {
 	}
 
 	#[inline(always)]
-	unsafe fn set_unchecked(&mut self, x: i64, y: i64, value: u8) {
+	pub unsafe fn set_unchecked(&mut self, x: i64, y: i64, value: u8) {
 		self.array.set_unchecked((x + y * self.width) as usize, value);
 	}
 
-	fn or_set(&mut self, x: i64, y: i64, value: u8) {
+	pub fn or_set(&mut self, x: i64, y: i64, value: u8) {
 		if 0 <= x && x < self.width && 0 <= y && y < self.height {
 			unsafe {
 				self.or_set_unchecked(x, y, value)
@@ -169,12 +175,12 @@ impl<P: PackedArray> Maze<P> {
 	}
 
 	#[inline(always)]
-	unsafe fn or_set_unchecked(&mut self, x: i64, y: i64, value: u8) {
+	pub unsafe fn or_set_unchecked(&mut self, x: i64, y: i64, value: u8) {
 		self.array.or_set_unchecked((x + y * self.width) as usize, value);
 	}
 
 	#[allow(dead_code)]
-	fn unset_provided(&mut self, x: i64, y: i64, value: u8) {
+	pub fn unset_provided(&mut self, x: i64, y: i64, value: u8) {
 		if 0 <= x && x < self.width && 0 <= y && y < self.height {
 			unsafe {
 				self.unset_provided_unchecked(x, y, value);
@@ -183,7 +189,7 @@ impl<P: PackedArray> Maze<P> {
 	}
 
 	#[inline(always)]
-	unsafe fn unset_provided_unchecked(&mut self, x: i64, y: i64, value: u8) {
+	pub unsafe fn unset_provided_unchecked(&mut self, x: i64, y: i64, value: u8) {
 		self.array.unset_provided_unchecked((x + y * self.width) as usize, value);
 	}
 }
