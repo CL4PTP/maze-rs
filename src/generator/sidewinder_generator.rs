@@ -1,32 +1,42 @@
 extern crate num_cpus;
 extern crate rand;
 
-use self::rand::{XorShiftRng, Rng, SeedableRng};
+use self::rand::{Rng, SeedableRng};
+use ::lcg_rng::LCGRng;
+use ::generator::{Generator, GeneratorOption};
+use ::utils::{S, E};
+use ::Grid;
 
-use super::{S, E};
-use super::Generator;
-use ::packed::*;
-use ::Maze;
-
-pub struct SidewinderGenerator<'a, P: 'a + PackedArray> {
-	maze: &'a mut Maze<P>,
-	rng: XorShiftRng
+pub struct SidewinderGenerator<'a, G: 'a + Grid + Send + Sync> {
+	grid: &'a mut G,
+	rng: LCGRng
 }
 
-impl<'a, P: PackedArray> SidewinderGenerator<'a, P> {
-	pub fn new(maze: &'a mut Maze<P>) -> Self {
+impl<'a, G: 'a + Grid + Send + Sync> SidewinderGenerator<'a, G> {
+	pub fn new(grid: &'a mut G, options: &[GeneratorOption]) -> Self {
+		use ::generator::GeneratorOption::*;
+
+		let mut seed = None;
+
+		for o in options {
+			match o {
+				&GeneratorOption::Seed(in_seed) => seed = Some(in_seed)
+			}
+		}
+
 		SidewinderGenerator {
-			maze: maze,
-			rng: XorShiftRng::new_unseeded()
+			grid: grid,
+			rng: if let Some(s) = seed {
+//TODO: revise this hackish thing
+					LCGRng::from_seed((s[1] as u64) + (s[2] as u64) << 32)
+				} else {
+					LCGRng::new_unseeded()
+				}
 		}
 	}
 }
 
-impl<'a, P: PackedArray> Generator for SidewinderGenerator<'a, P> {
-	fn set_seed(&mut self, seed: [u32; 4]) {
-		self.rng.reseed(seed);
-	}
-
+impl<'a, G: 'a + Grid + Send + Sync> Generator for SidewinderGenerator<'a, G> {
 	fn generate(&mut self) {
 		#![allow(mutable_transmutes)]
 		use std::thread;
@@ -34,39 +44,41 @@ impl<'a, P: PackedArray> Generator for SidewinderGenerator<'a, P> {
 		use std::mem::transmute;
 		use self::num_cpus;
 
-		let num_cores = num_cpus::get() as i64;
-		let rows_per_thread = self.maze.height() / num_cores;
+		let num_cores = num_cpus::get() as u64;
+		let rows_per_thread = self.grid.height() / num_cores;
 
-		assert!(self.maze.height() % num_cores == 0,
-			"Maze height must be divisible by {}, but {} given", num_cores, self.maze.height());
+		assert!(self.grid.height() % num_cores == 0,
+			"Maze height must be divisible by {}, but {} given", num_cores, self.grid.height());
 
-		let maze = Arc::new(&mut *self.maze);
+		let grid = Arc::new(&mut *self.grid);
 		let mut rng = self.rng.clone();
 
         let mut threads = Vec::with_capacity(num_cores as usize);
 
 		for tn in 0..num_cores {
-			let (x,y,z,w) = (rng.next_u32(), rng.next_u32(), rng.next_u32(), rng.next_u32());
-			rng.reseed([w,z,x,y]);
+			let seed = !rng.next_u64();
+			rng.reseed(seed);
 
-			let maze = maze.clone();
+			let grid = grid.clone();
 			let mut rng = rng.clone();
 
 			threads.push(thread::scoped(move || {
-				let maze: &mut Maze<P> = unsafe { transmute(&**maze) };
+				let grid: &mut G = unsafe { transmute(&**grid) };
 
 				for y in (tn * rows_per_thread)..((tn + 1) * rows_per_thread) {
 					let mut run_start = 0;
 
-					for x in 0..maze.width() {
-						if y > 0 && (x + 1 == maze.width() || rng.next_f64() > 0.50) {
+					for x in 0..grid.width() {
+						if y > 0 && (x + 1 == grid.width() || rng.next_f64() > 0.50) {
 							let carve_point =
-								run_start + (rng.next_f64() * (x - run_start + 1) as f64) as i64;
+								run_start + (rng.next_f64() * (x - run_start + 1) as f64) as u64;
 
-							unsafe { maze.or_set_unchecked(carve_point, y - 1, S); }
+							// NOTE: here's something interesting:
+							// if you replace `or_set` with `or_set_unchecked`, it gets slower.
+							grid.or_set(carve_point, y - 1, S);
 							run_start = x + 1;
-						} else if x + 1 < maze.width() {
-							unsafe { maze.or_set_unchecked(x, y, E); }
+						} else if x + 1 < grid.width() {
+							grid.or_set(x, y, E);
 						}
 					}
 				}

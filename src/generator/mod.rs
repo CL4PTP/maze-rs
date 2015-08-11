@@ -9,12 +9,11 @@ mod utils {
 	}
 }
 
-pub const S: u8 = 1;
-pub const E: u8 = 2;
+pub enum GeneratorOption {
+	Seed(&'static [u32])
+}
 
 pub trait Generator {
-	fn set_seed(&mut self, seed: [u32; 4]);
-
 	fn generate(&mut self);
 }
 
