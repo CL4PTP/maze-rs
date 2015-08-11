@@ -1,9 +1,9 @@
-pub struct StackDivisionGenerator<'a, P: 'a + PackedArray> {
+pub struct StackDivisionGenerator<'a, P: 'a + Grid> {
 	maze: &'a mut Maze<P>,
 	rng: XorShiftRng
 }
 
-impl<'a, P: PackedArray> StackDivisionGenerator<'a, P> {
+impl<'a, P: Grid> StackDivisionGenerator<'a, P> {
 	pub fn new(maze: &'a mut Maze<P>) -> Self {
 		StackDivisionGenerator {
 			maze: maze,
@@ -12,7 +12,7 @@ impl<'a, P: PackedArray> StackDivisionGenerator<'a, P> {
 	}
 }
 
-impl<'a, P: PackedArray> Generator for StackDivisionGenerator<'a, P> {
+impl<'a, P: Grid> Generator for StackDivisionGenerator<'a, P> {
 	fn set_seed(&mut self, seed: [u32; 4]) {
 		self.rng.reseed(seed);
 	}
