@@ -9,7 +9,7 @@ macro_rules! bench_build_maze {
 					.width($width)
 					.height($height)
 					.generate_using($gen)
-					.build::<InMemoryPackedArray>(&[]);
+					.build::<InMemoryPackedGrid>(&[]);
 		})
 	};
 	($b:expr, $width:expr, $height:expr, $gen:expr, $mem:ty, $options:expr) => {
@@ -83,31 +83,31 @@ mod benches {
 
 	#[bench]
 	fn mmap_32_32_sidewinder(b: &mut Bencher) {
-		bench_build_maze!(b, 32, 32, GeneratorType::Sidewinder, MMAPPackedArray,
+		bench_build_maze!(b, 32, 32, GeneratorType::Sidewinder, MMAPPackedGrid,
 			&[PackedOption::MMAPFilePath(format!("maze_{}x{}.bin", 32, 32))]);
 	}
 
 	#[bench]
 	fn mmap_32_32_parallel_sidewinder(b: &mut Bencher) {
-		bench_build_maze!(b, 32, 32, GeneratorType::ParallelSidewinder, MMAPPackedArray,
+		bench_build_maze!(b, 32, 32, GeneratorType::ParallelSidewinder, MMAPPackedGrid,
 			&[PackedOption::MMAPFilePath(format!("maze_{}x{}.bin", 32, 32))]);
 	}
 
 	#[bench]
 	fn mmap_32_32_recursive_division(b: &mut Bencher) {
-		bench_build_maze!(b, 32, 32, GeneratorType::RecursiveDivision, MMAPPackedArray,
+		bench_build_maze!(b, 32, 32, GeneratorType::RecursiveDivision, MMAPPackedGrid,
 			&[PackedOption::MMAPFilePath(format!("maze_{}x{}.bin", 32, 32))]);
 	}
 
 	#[bench]
 	fn mmap_32_32_stack_division(b: &mut Bencher) {
-		bench_build_maze!(b, 32, 32, GeneratorType::StackDivision, MMAPPackedArray,
+		bench_build_maze!(b, 32, 32, GeneratorType::StackDivision, MMAPPackedGrid,
 			&[PackedOption::MMAPFilePath(format!("maze_{}x{}.bin", 32, 32))]);
 	}
 
 	#[bench]
 	fn mmap_32_32_stack_backtrack(b: &mut Bencher) {
-		bench_build_maze!(b, 32, 32, GeneratorType::StackBacktrack, MMAPPackedArray,
+		bench_build_maze!(b, 32, 32, GeneratorType::StackBacktrack, MMAPPackedGrid,
 			&[PackedOption::MMAPFilePath(format!("maze_{}x{}.bin", 32, 32))]);
 	}
 
@@ -115,31 +115,31 @@ mod benches {
 
 	#[bench]
 	fn mmap_1024_1024_sidewinder(b: &mut Bencher) {
-		bench_build_maze!(b, 1024, 1024, GeneratorType::Sidewinder, MMAPPackedArray,
+		bench_build_maze!(b, 1024, 1024, GeneratorType::Sidewinder, MMAPPackedGrid,
 			&[PackedOption::MMAPFilePath(format!("maze_{}x{}.bin", 1024, 1024))]);
 	}
 
 	#[bench]
 	fn mmap_1024_1024_parallel_sidewinder(b: &mut Bencher) {
-		bench_build_maze!(b, 1024, 1024, GeneratorType::ParallelSidewinder, MMAPPackedArray,
+		bench_build_maze!(b, 1024, 1024, GeneratorType::ParallelSidewinder, MMAPPackedGrid,
 			&[PackedOption::MMAPFilePath(format!("maze_{}x{}.bin", 1024, 1024))]);
 	}
 
 	#[bench]
 	fn mmap_1024_1024_recursive_division(b: &mut Bencher) {
-		bench_build_maze!(b, 1024, 1024, GeneratorType::RecursiveDivision, MMAPPackedArray,
+		bench_build_maze!(b, 1024, 1024, GeneratorType::RecursiveDivision, MMAPPackedGrid,
 			&[PackedOption::MMAPFilePath(format!("maze_{}x{}.bin", 1024, 1024))]);
 	}
 
 	#[bench]
 	fn mmap_1024_1024_stack_division(b: &mut Bencher) {
-		bench_build_maze!(b, 1024, 1024, GeneratorType::StackDivision, MMAPPackedArray,
+		bench_build_maze!(b, 1024, 1024, GeneratorType::StackDivision, MMAPPackedGrid,
 			&[PackedOption::MMAPFilePath(format!("maze_{}x{}.bin", 1024, 1024))]);
 	}
 
 	#[bench]
 	fn mmap_1024_1024_stack_backtrack(b: &mut Bencher) {
-		bench_build_maze!(b, 1024, 1024, GeneratorType::StackBacktrack, MMAPPackedArray,
+		bench_build_maze!(b, 1024, 1024, GeneratorType::StackBacktrack, MMAPPackedGrid,
 			&[PackedOption::MMAPFilePath(format!("maze_{}x{}.bin", 1024, 1024))]);
 	}
 }
