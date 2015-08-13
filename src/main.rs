@@ -11,7 +11,7 @@ use std::env;
 use std::str::FromStr;
 use maze::*;
 use maze::grid::mmap_packed_grid::MMAPPackedGrid;
-use maze::solver::recursive_backtrack_solver::RecursiveDFSolver;
+use maze::solver::stack_df_solver::StackDFSolver;
 
 docopt!(Args derive Debug, "
 Usage:
@@ -39,9 +39,11 @@ fn main() {
 			Height(height)
 		]);
 
-		generate(&mut _maze, GeneratorType::Sidewinder, &[]);
+		static SEED: [u32; 2] = [0x00, 0x00];
 
-		let solver = RecursiveDFSolver::new(&_maze);
+		generate(&mut _maze, GeneratorType::Sidewinder, &[GeneratorOption::Seed(&SEED)]);
+
+		let solver = StackDFSolver::new(&_maze);
 		let directions = solver.solve();
 
 		if args.flag_print {
