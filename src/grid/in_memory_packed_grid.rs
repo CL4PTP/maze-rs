@@ -1,5 +1,5 @@
-use super::{Grid, PackedOption};
-use super::utils::*;
+use ::{Grid, PackedOption};
+use ::utils::*;
 
 pub struct InMemoryPackedGrid {
 	arr: Vec<u8>,
