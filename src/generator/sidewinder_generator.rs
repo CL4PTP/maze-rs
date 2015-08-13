@@ -27,7 +27,7 @@ impl<'a, G: 'a + Grid + Send + Sync> SidewinderGenerator<'a, G> {
 			grid: grid,
 			rng: if let Some(s) = seed {
 //TODO: revise this hackish thing
-					LCGRng::from_seed((s[1] as u64) + (s[2] as u64) << 32)
+					LCGRng::from_seed((s[0] as u64) + (s[1] as u64) << 32)
 				} else {
 					LCGRng::new_unseeded()
 				}
