@@ -1,6 +1,5 @@
 #![feature(scoped)]
 #![feature(result_expect)]
-
 #![feature(cstr_to_str)]
 #![feature(box_raw)]
 
@@ -120,25 +119,29 @@ pub trait Grid: Send + Sync {
 	unsafe fn unset_provided_unchecked(&mut self, x: u64, y: u64, value: u8);
 
 	fn get(&self, x: u64, y: u64) -> u8 {
-		assert!(x < self.width() && y < self.height());
+		assert!(x < self.width() && y < self.height(),
+			"{} < {} && {} < {}", x, self.width(), y, self.height());
 
 		unsafe { self.get_unchecked(x, y) }
 	}
 
 	fn set(&mut self, x: u64, y: u64, value: u8) {
-		assert!(x < self.width() && y < self.height());
+		assert!(x < self.width() && y < self.height(),
+			"{} < {} && {} < {}", x, self.width(), y, self.height());
 
 		unsafe { self.set_unchecked(x, y, value); }
 	}
 
 	fn or_set(&mut self, x: u64, y: u64, value: u8) {
-		assert!(x < self.width() && y < self.height());
+		assert!(x < self.width() && y < self.height(),
+			"{} < {} && {} < {}", x, self.width(), y, self.height());
 
 		unsafe { self.or_set_unchecked(x, y, value) }
 	}
 
 	fn unset_provided(&mut self, x: u64, y: u64, value: u8) {
-		assert!(x < self.width() && y < self.height());
+		assert!(x < self.width() && y < self.height(),
+			"{} < {} && {} < {}", x, self.width(), y, self.height());
 		
 		unsafe { self.unset_provided_unchecked(x, y, value); }
 	}
