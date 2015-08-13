@@ -73,12 +73,10 @@ impl<'a, G: 'a + Grid + Send + Sync> Generator for SidewinderGenerator<'a, G> {
 							let carve_point =
 								run_start + (rng.next_f64() * (x - run_start + 1) as f64) as u64;
 
-							// NOTE: here's something interesting:
-							// if you replace `or_set` with `or_set_unchecked`, it gets slower.
-							grid.or_set(carve_point, y, S as u8);
+							unsafe { grid.or_set_unchecked(carve_point, y, S as u8); }
 							run_start = x + 1;
 						} else if x + 1 < grid.width() {
-							grid.or_set(x, y, E as u8);
+							unsafe { grid.or_set_unchecked(x, y, E as u8); }
 						}
 					}
 				}
