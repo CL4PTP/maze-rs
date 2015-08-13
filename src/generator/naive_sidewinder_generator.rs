@@ -12,7 +12,6 @@ pub struct NaiveSidewinderGenerator<'a, G: 'a + Grid> {
 
 impl<'a, G: Grid> NaiveSidewinderGenerator<'a, G> {
 	pub fn new(grid: &'a mut G, options: &[GeneratorOption]) -> Self {
-
 		let mut seed = None;
 
 		for o in options {

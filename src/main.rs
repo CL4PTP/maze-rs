@@ -41,7 +41,7 @@ fn main() {
 
 		static SEED: [u32; 2] = [0x00, 0x00];
 
-		generate(&mut _maze, GeneratorType::Sidewinder, &[GeneratorOption::Seed(&SEED)]);
+		generate(&mut _maze, GeneratorType::RecursiveBacktrack, &[GeneratorOption::Seed(&SEED)]);
 
 		if args.flag_print {
 			println!("{}", _maze.to_string());
