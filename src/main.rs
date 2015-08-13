@@ -15,7 +15,7 @@ use maze::solver::stack_df_solver::StackDFSolver;
 
 docopt!(Args derive Debug, "
 Usage:
-  maze generate <width> <height> [<location>] [--print]
+  maze generate <width> <height> [<location>] [--print] [--solve]
   maze (--help | --version)
 
 Options:
@@ -43,11 +43,14 @@ fn main() {
 
 		generate(&mut _maze, GeneratorType::Sidewinder, &[GeneratorOption::Seed(&SEED)]);
 
-		let solver = StackDFSolver::new(&_maze);
-		let directions = solver.solve();
-
 		if args.flag_print {
 			println!("{}", _maze.to_string());
+		}
+
+		if args.flag_solve {
+			let solver = StackDFSolver::new(&_maze);
+			let directions = solver.solve();
+
 			println!("Solution: {:?}", directions);
 		}
 	} else if args.flag_version {
