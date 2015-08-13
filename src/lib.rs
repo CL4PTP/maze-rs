@@ -194,9 +194,9 @@ pub fn generate<G: Grid>(grid: &mut G, generator_type: GeneratorType, options: &
 
 	let mut generator: Box<Generator + Sized> = match generator_type {
 		Sidewinder => 
-			Box::new(sidewinder_generator::SidewinderGenerator::new(grid, options)),
+			Box::new(SidewinderGenerator::new(grid, options)),
 		NaiveSidewinder => 
-			Box::new(naive_sidewinder_generator::NaiveSidewinderGenerator::new(grid, options)),
+			Box::new(NaiveSidewinderGenerator::new(grid, options)),
 
 		_ => panic!("\"{:?}\" generator algorithm not yet implemented", generator_type)
 	};
