@@ -199,6 +199,12 @@ pub fn generate<G: Grid>(grid: &mut G, generator_type: GeneratorType, options: &
 			Box::new(NaiveSidewinderGenerator::new(grid, options)),
 		RecursiveBacktrack => 
 			Box::new(RecursiveBacktrackGenerator::new(grid, options)),
+		StackBacktrack => 
+			Box::new(StackBacktrackGenerator::new(grid, options)),
+		RecursiveDivision => 
+			Box::new(RecursiveDivisionGenerator::new(grid, options)),
+		StackDivision => 
+			Box::new(StackDivisionGenerator::new(grid, options)),
 
 		_ => panic!("\"{:?}\" generator algorithm not yet implemented", generator_type)
 	};

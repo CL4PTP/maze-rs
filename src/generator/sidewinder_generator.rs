@@ -1,10 +1,10 @@
 extern crate num_cpus;
-extern crate rand;
 
-use ::lcg_rng::LCGRng;
 use ::{Grid, Generator, GeneratorOption};
 use ::utils::Direction::{S, E};
-use self::rand::{Rng, SeedableRng};
+use ::lcg_rng::LCGRng;
+use super::utils::init_rng;
+use super::utils::rand::{Rng, SeedableRng};
 
 pub struct SidewinderGenerator<'a, G: 'a + Grid + Send + Sync> {
 	grid: &'a mut G,
@@ -25,12 +25,7 @@ impl<'a, G: 'a + Grid + Send + Sync> SidewinderGenerator<'a, G> {
 
 		SidewinderGenerator {
 			grid: grid,
-			rng: if let Some(s) = seed {
-//TODO: revise this hackish thing
-					LCGRng::from_seed((s[0] as u64) + (s[1] as u64) << 32)
-				} else {
-					LCGRng::new_unseeded()
-				}
+			rng: init_rng(seed)
 		}
 	}
 }

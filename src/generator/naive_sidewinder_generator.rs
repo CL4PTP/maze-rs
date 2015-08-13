@@ -1,9 +1,8 @@
-extern crate rand;
-
-use ::lcg_rng::LCGRng;
 use ::{Grid, Generator, GeneratorOption};
 use ::utils::Direction::{S, E};
-use self::rand::{Rng, SeedableRng};
+use ::lcg_rng::LCGRng;
+use super::utils::init_rng;
+use super::utils::rand::Rng;
 
 pub struct NaiveSidewinderGenerator<'a, G: 'a + Grid> {
 	grid: &'a mut G,
@@ -22,18 +21,12 @@ impl<'a, G: Grid> NaiveSidewinderGenerator<'a, G> {
 
 		NaiveSidewinderGenerator {
 			grid: grid,
-			rng: if let Some(s) = seed {
-//TODO: revise this hackish thing
-					LCGRng::from_seed((s[0] as u64) + (s[1] as u64) << 32)
-				} else {
-					LCGRng::new_unseeded()
-				}
+			rng: init_rng(seed)
 		}
 	}
 }
 
 impl<'a, G: Grid> Generator for NaiveSidewinderGenerator<'a, G> {
-	
 	fn generate(&mut self) {
 		let grid = &mut *self.grid;
 
