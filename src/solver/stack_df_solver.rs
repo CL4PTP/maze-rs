@@ -22,13 +22,13 @@ impl<'a, G: 'a + Grid> StackDFSolver<'a, G> {
 		stack.push((x as i64, y as i64, (0,)));
 
 		'stack_loop: while !stack.is_empty() {
-			let (x, y, (mut i,)) = stack.pop().unwrap();
+			let (x, y, (i,)) = stack.pop().unwrap();
 
 			if x as u64 == self.grid.width() - 1 && y as u64 == self.grid.height() - 1 {
 				return true
 			} else if x >= 0 && (x as u64) < self.grid.width()
 				&& y >= 0 && (y as u64) < self.grid.height() {
-				while i < Direction::enumerate().len() {
+				for i in i..Direction::enumerate().len() {
 					let dir = Direction::enumerate()[i];
 
 					if dir != self.path.last().unwrap_or(&S).opposite()
@@ -47,8 +47,6 @@ impl<'a, G: 'a + Grid> StackDFSolver<'a, G> {
 						stack.push((x + dx, y + dy, (0,)));
 						continue 'stack_loop;
 					}
-
-					i += 1;
 				}
 			}
 			
