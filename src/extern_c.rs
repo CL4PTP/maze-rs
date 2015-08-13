@@ -40,7 +40,7 @@ pub unsafe extern "C"
 fn maze_free(maze: *mut c_void) {
 	let _: Box<MMAPPackedGrid> = Box::from_raw(transmute(maze));
 
-	// NOTE: the box will drop here
+	// NOTE: the box was dropped above
 }
 
 #[no_mangle]
