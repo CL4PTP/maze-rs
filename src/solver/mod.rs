@@ -1,7 +1,6 @@
 pub mod recursive_backtrack_solver {
 	use ::{Grid, Solver, SolverSolution};
 	use ::utils::Direction;
-	use std::cell::RefCell;
 
 	pub struct RecursiveDFSolver<'a, G: 'a + Grid> {
 		grid: &'a G,
