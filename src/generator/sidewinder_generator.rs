@@ -1,11 +1,11 @@
 extern crate num_cpus;
 extern crate rand;
 
-use self::rand::{Rng, SeedableRng};
 use ::lcg_rng::LCGRng;
-use ::generator::{Generator, GeneratorOption};
-use ::utils::{S, E};
-use ::Grid;
+use ::{Grid, Generator, GeneratorOption};
+use ::utils::Direction::{S, E};
+use self::rand::{Rng, SeedableRng};
+use std::convert::Into;
 
 pub struct SidewinderGenerator<'a, G: 'a + Grid + Send + Sync> {
 	grid: &'a mut G,
@@ -14,7 +14,7 @@ pub struct SidewinderGenerator<'a, G: 'a + Grid + Send + Sync> {
 
 impl<'a, G: 'a + Grid + Send + Sync> SidewinderGenerator<'a, G> {
 	pub fn new(grid: &'a mut G, options: &[GeneratorOption]) -> Self {
-		use ::generator::GeneratorOption::*;
+		use GeneratorOption::*;
 
 		let mut seed = None;
 
@@ -75,10 +75,10 @@ impl<'a, G: 'a + Grid + Send + Sync> Generator for SidewinderGenerator<'a, G> {
 
 							// NOTE: here's something interesting:
 							// if you replace `or_set` with `or_set_unchecked`, it gets slower.
-							grid.or_set(carve_point, y - 1, S);
+							grid.or_set(carve_point, y - 1, S.into());
 							run_start = x + 1;
 						} else if x + 1 < grid.width() {
-							grid.or_set(x, y, E);
+							grid.or_set(x, y, E.into());
 						}
 					}
 				}

@@ -1,7 +1,7 @@
 extern crate libc;
 
 use ::{GeneratorType, generate, Grid};
-use ::mmap_packed_grid::MMAPPackedGrid;
+use ::grid::mmap_packed_grid::MMAPPackedGrid;
 use self::libc::*;
 use std::mem::transmute;
 use std::ffi::CStr;

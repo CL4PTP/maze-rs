@@ -10,7 +10,8 @@ extern crate maze;
 use std::env;
 use std::str::FromStr;
 use maze::*;
-use maze::mmap_packed_grid::MMAPPackedGrid;
+use maze::grid::mmap_packed_grid::MMAPPackedGrid;
+use maze::solver::recursive_backtrack_solver::RecursiveDFSolver;
 
 docopt!(Args derive Debug, "
 Usage:
@@ -40,8 +41,12 @@ fn main() {
 
 		generate(&mut _maze, GeneratorType::Sidewinder, &[]);
 
+		let solver = RecursiveDFSolver::new(&_maze);
+		let directions = solver.solve();
+
 		if args.flag_print {
 			println!("{}", _maze.to_string());
+			println!("Solution: {:?}", directions);
 		}
 	} else if args.flag_version {
 		println!("{}", env!("CARGO_PKG_VERSION"));
