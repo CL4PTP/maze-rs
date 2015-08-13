@@ -190,10 +190,13 @@ pub trait Solver {
 
 pub fn generate<G: Grid>(grid: &mut G, generator_type: GeneratorType, options: &[GeneratorOption]) {
 	use self::GeneratorType::*;
+	use self::generator::*;
 
 	let mut generator: Box<Generator + Sized> = match generator_type {
 		Sidewinder => 
-			Box::new(generator::sidewinder_generator::SidewinderGenerator::new(grid, options)),
+			Box::new(sidewinder_generator::SidewinderGenerator::new(grid, options)),
+		NaiveSidewinder => 
+			Box::new(naive_sidewinder_generator::NaiveSidewinderGenerator::new(grid, options)),
 
 		_ => panic!("\"{:?}\" generator algorithm not yet implemented", generator_type)
 	};
